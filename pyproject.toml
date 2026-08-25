@@ -1,0 +1,18 @@
+[project]
+name = "data-engineering"
+version = "0.1.0"
+description = "Here apply ETL and use AWS EC2 and Airflow"
+readme = "README.md"
+authors = [
+    { name = "EddyGiusepe", email = "eddychirinos.unac@gmail.com" }
+]
+requires-python = ">=3.13.7, <3.14"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.4",
+]
+
+[tool.ruff]
+extend = "ruff.toml"
