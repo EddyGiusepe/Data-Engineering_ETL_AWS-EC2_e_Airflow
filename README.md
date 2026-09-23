@@ -3,7 +3,7 @@
 <font color="pink">Senior Data Scientist.: Dr. Eddy Giusepe Chirinos Isidro</font>
 
 
-![](architecture_and_workflow_stack/etl_pipeline_architecture.png)
+![](etl_pipeline_architecture.png)
 
 ETL pipeline (OpenWeather → transformation → S3) orchestrated with Apache Airflow. The reference tutorial is the video [How to build and automate a python ETL pipeline with airflow on AWS EC2](https://www.youtube.com/watch?v=uhQ54Dgp6To).
 
