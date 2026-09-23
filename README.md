@@ -1,6 +1,6 @@
 <h1 align="center">Data Engineering: ETL AWS EC2 and Airflow</h1>
 
-<font color="pink">Senior Data Scientist.: Dr. Eddy Giusepe Chirinos Isidro</font>
+<font color="pink">Senior Data Scientist/AI Engineering.: Dr. Eddy Giusepe Chirinos Isidro</font>
 
 
 ![](etl_pipeline_architecture.png)
