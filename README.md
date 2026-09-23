@@ -5,114 +5,114 @@
 
 ![](architecture_and_workflow_stack/etl_pipeline_architecture.png)
 
-Pipeline ETL (OpenWeather → transformação → S3) orquestrado com Apache Airflow. O tutorial de referência é o vídeo [How to build and automate a python ETL pipeline with airflow on AWS EC2](https://www.youtube.com/watch?v=uhQ54Dgp6To).
+ETL pipeline (OpenWeather → transformation → S3) orchestrated with Apache Airflow. The reference tutorial is the video [How to build and automate a python ETL pipeline with airflow on AWS EC2](https://www.youtube.com/watch?v=uhQ54Dgp6To).
 
-Neste repositório praticamos **sem gastar na Amazon**, usando o [Floci](https://floci.io): emulador local de AWS (S3, EC2, …). Os comandos `aws s3 …` e `aws ec2 …` são os **mesmos** da nuvem; muda só o destino (`localhost:4566`) e as credenciais (`test` / `test`).
+In this repository we practice **without spending money on Amazon**, using [Floci](https://floci.io): a local AWS emulator (S3, EC2, …). The `aws s3 …` and `aws ec2 …` commands are the **same** as in the cloud; only the destination (`localhost:4566`) and credentials (`test` / `test`) change.
 
-Detalhes longos do S3 (erros que já cometemos, persistência): [using_floci.md](using_floci.md).
+Long S3 details (mistakes we've already made, persistence): [using_floci.md](using_floci.md).
 
 ---
 
-## O que o vídeo faz vs o que fazemos aqui
+## What the video does vs. what we do here
 
-| No vídeo (AWS real) | Aqui (Floci, local, grátis) |
+| In the video (real AWS) | Here (Floci, local, free) |
 |---|---|
-| Console AWS, Ubuntu, `t2.small`, IP público | CLI + container Docker que **finge** EC2 |
-| SSH `ubuntu@ec2-….amazonaws.com` | SSH `root@127.0.0.1` na porta **2200** (ou `2200–2299`) |
-| S3 na Amazon (custa) | S3 no Floci (**Storage** na UI) |
-| Airflow 2.x na EC2 | **Airflow 3.3.1** + **uv** na EC2 Floci |
-| `.pem` baixado da AWS | Par SSH local `~/.ssh/id_ed25519` |
+| AWS Console, Ubuntu, `t2.small`, public IP | CLI + Docker container that **pretends** to be EC2 |
+| SSH `ubuntu@ec2-….amazonaws.com` | SSH `root@127.0.0.1` on port **2200** (or `2200–2299`) |
+| S3 on Amazon (costs money) | S3 on Floci (**Storage** in the UI) |
+| Airflow 2.x on EC2 | **Airflow 3.3.1** + **uv** on Floci EC2 |
+| `.pem` downloaded from AWS | Local SSH key pair `~/.ssh/id_ed25519` |
 
-Reproduzimos o **fluxo** do vídeo (S3 + EC2 + SSH + ETL depois), não a tela do console AWS nem as versões antigas dos pacotes.
+We reproduce the **flow** of the video (S3 + EC2 + SSH + ETL afterward), not the AWS console screen nor the old package versions.
 
 ```
-OpenWeather API  →  Airflow 3.3.1 (na EC2)  →  CSV  →  S3
-     (clima)              (orquestra)                 (guarda)
+OpenWeather API  →  Airflow 3.3.1 (on EC2)  →  CSV  →  S3
+     (weather)              (orchestrates)             (stores)
 ```
 
 ---
 
-## Status do que já fizemos
+## Status of what we've done so far
 
-| Etapa | Status |
+| Step | Status |
 |---|---|
-| Floci com persistência (`./floci-data`) | Feito |
-| Bucket S3 `my-s3-for-cv` + upload do CV | Feito |
-| Chave SSH `floci-eddy` importada no Floci | Feito |
-| Instância `ec2-instance-eddy` (`running`) | Feito |
-| SSH `root@127.0.0.1:2200` | Feito |
-| `.env` local com API OpenWeather (raiz do repo) | Feito (não commitado) |
-| Airflow 3.3.1 + DAG `weather_dag` → S3 | Feito |
-| DAG versionada em [`airflow/dags/`](airflow/dags/weather_dag.py) | Feito |
+| Floci with persistence (`./floci-data`) | Done |
+| S3 bucket `my-s3-for-cv` + CV upload | Done |
+| SSH key `floci-eddy` imported into Floci | Done |
+| Instance `ec2-instance-eddy` (`running`) | Done |
+| SSH `root@127.0.0.1:2200` | Done |
+| Local `.env` with OpenWeather API (repo root) | Done (not committed) |
+| Airflow 3.3.1 + `weather_dag` DAG → S3 | Done |
+| DAG versioned in [`airflow/dags/`](airflow/dags/weather_dag.py) | Done |
 
 ---
 
-## S3 vs EC2 (para não misturar)
+## S3 vs. EC2 (so you don't mix them up)
 
-- **S3** = gaveta. Guarda objeto (PDF, CSV, imagem). Não executa programa.
-- **EC2** = computador. Liga, você entra por SSH, instala Python/Airflow. É o “onde o job roda”.
+- **S3** = a drawer. It stores objects (PDF, CSV, image). It doesn't run programs.
+- **EC2** = a computer. It powers on, you log in via SSH, install Python/Airflow. It's the "where the job runs."
 
-Exemplo já feito: o CV `Data_Science_Eddy_en.pdf` está no S3 local:
+Example already done: the CV `Data_Science_Eddy_en.pdf` is in local S3:
 
 - bucket: `my-s3-for-cv`
 - key: `eddy-cv-directory/Data_Science_Eddy_en.pdf`
 - URI: `s3://my-s3-for-cv/eddy-cv-directory/Data_Science_Eddy_en.pdf`
 
-Na UI do Floci: S3 = **Storage**. EC2 = **Compute**. Par de chaves = **Networking → Key Pairs**. `http://localhost:4566` é API, não pasta de arquivos.
+In the Floci UI: S3 = **Storage**. EC2 = **Compute**. Key pair = **Networking → Key Pairs**. `http://localhost:4566` is an API, not a file folder.
 
 ---
 
-## Variáveis de ambiente e segredos (`.env`)
+## Environment variables and secrets (`.env`)
 
-**Nunca commite** chaves reais. O `.gitignore` já ignora `.env` e `floci-data/`.
+**Never commit** real keys. `.gitignore` already ignores `.env` and `floci-data/`.
 
-### Na raiz deste repositório (sua máquina)
+### In the root of this repository (your machine)
 
-Template versionado: [`.env.example`](.env.example)
+Versioned template: [`.env.example`](.env.example)
 
 ```bash
 cp .env.example .env
-# Edite .env localmente e preencha o valor (não cole no chat nem no Git)
+# Edit .env locally and fill in the value (do not paste it in chat or Git)
 ```
 
-Conteúdo esperado (sem valor real no repo):
+Expected content (no real value in the repo):
 
 ```env
-API_KEY_OPENWEATHER=sua_chave_aqui
+API_KEY_OPENWEATHER=your_key_here
 ```
 
-Usado pelo script de teste OpenWeather (`testing_openweather_api.py`, quando existir no repo) com `python-dotenv`. A chave vem de [home.openweathermap.org](https://home.openweathermap.org).
+Used by the OpenWeather test script (`testing_openweather_api.py`, when present in the repo) with `python-dotenv`. The key comes from [home.openweathermap.org](https://home.openweathermap.org).
 
-### Credenciais do Floci (automáticas)
+### Floci credentials (automatic)
 
-O `eval $(floci env)` exporta credenciais **fake** só para o emulador local:
+`eval $(floci env)` exports **fake** credentials just for the local emulator:
 
 - `AWS_ACCESS_KEY_ID=test`
 - `AWS_SECRET_ACCESS_KEY=test`
-- `AWS_ENDPOINT_URL=http://localhost:4566` (ou `http://localhost.floci.io:4566`)
+- `AWS_ENDPOINT_URL=http://localhost:4566` (or `http://localhost.floci.io:4566`)
 
-Isso **não** é segredo de produção; é o padrão do Floci.
+This is **not** a production secret; it's Floci's default.
 
-### Chave SSH (sua máquina)
+### SSH key (your machine)
 
-| Arquivo | Onde fica | Vai para o Git? | Vai para o Floci? |
+| File | Location | Goes to Git? | Goes to Floci? |
 |---|---|---|---|
-| `~/.ssh/id_ed25519` | privada, só no PC | **Nunca** | **Não** |
-| `~/.ssh/id_ed25519.pub` | pública | opcional (não necessário) | **Sim** (`import-key-pair`) |
+| `~/.ssh/id_ed25519` | private, only on your PC | **Never** | **No** |
+| `~/.ssh/id_ed25519.pub` | public | optional (not necessary) | **Yes** (`import-key-pair`) |
 
-O `ssh -i ~/.ssh/id_ed25519` **lê** a privada localmente; ela **não é enviada** para a instância.
+`ssh -i ~/.ssh/id_ed25519` **reads** the private key locally; it is **not sent** to the instance.
 
-### Dentro da EC2 (depois, para Airflow)
+### Inside the EC2 instance (later, for Airflow)
 
-Quando instalarmos o Airflow na instância, variáveis como `AIRFLOW_HOME` e, se necessário, `API_KEY_OPENWEATHER` podem ficar em `~/airflow/.env` **dentro do container** — também fora do Git. Documentaremos na seção 4 sem expor valores.
+Once we install Airflow on the instance, variables like `AIRFLOW_HOME` and, if needed, `API_KEY_OPENWEATHER` can live in `~/airflow/.env` **inside the container** — also outside Git. We'll document this in section 4 without exposing values.
 
 ---
 
-## 0. Pré-requisitos (uma vez)
+## 0. Prerequisites (one time)
 
-- **Docker** rodando: `docker ps`
+- **Docker** running: `docker ps`
 - **Floci CLI**: `curl -fsSL https://floci.io/install.sh | sh` → `floci --version`
-- **AWS CLI v2** (oficial; `apt install awscli` no Ubuntu recente **falha**):
+- **AWS CLI v2** (official; `apt install awscli` on recent Ubuntu **fails**):
 
 ```bash
 cd /tmp
@@ -122,9 +122,9 @@ sudo ./aws/install
 aws --version
 ```
 
-Console do Floci (opcional): `http://localhost:4500`. API AWS: `http://localhost:4566`.
+Floci console (optional): `http://localhost:4500`. AWS API: `http://localhost:4566`.
 
-Opcional — evitar pager (`less`) nos comandos `aws`:
+Optional — avoid the pager (`less`) on `aws` commands:
 
 ```bash
 export AWS_PAGER=""
@@ -132,9 +132,9 @@ export AWS_PAGER=""
 
 ---
 
-## 1. Ligar o Floci (todo terminal / todo reboot)
+## 1. Start Floci (every terminal / every reboot)
 
-Na pasta do projeto:
+In the project folder:
 
 ```bash
 cd ~/1_GitHub/Data-Engineering_ETL_AWS-EC2_e_Airflow
@@ -143,15 +143,15 @@ eval $(floci env)
 echo $AWS_ENDPOINT_URL
 ```
 
-- `--persist ./floci-data` guarda S3 (e estado EC2) no disco.
-- `eval $(floci env)` aponta **este** terminal para o emulador.
-- Cada aba nova: de novo `eval $(floci env)`.
+- `--persist ./floci-data` stores S3 (and EC2 state) on disk.
+- `eval $(floci env)` points **this** terminal at the emulator.
+- Every new tab: run `eval $(floci env)` again.
 
-Parar: `floci stop`. Depois de reiniciar o PC: `floci start --persist ./floci-data` + `eval $(floci env)`.
+Stop: `floci stop`. After restarting your PC: `floci start --persist ./floci-data` + `eval $(floci env)`.
 
 ---
 
-## 2. S3 — criar bucket e enviar o CV
+## 2. S3 — create a bucket and upload the CV
 
 ```bash
 cd ~/1_GitHub/Data-Engineering_ETL_AWS-EC2_e_Airflow
@@ -162,28 +162,28 @@ aws s3 cp Data_Science_Eddy_en.pdf s3://my-s3-for-cv/eddy-cv-directory/Data_Scie
 aws s3 ls s3://my-s3-for-cv --recursive
 ```
 
-**Dois comandos separados** (`mb` uma vez; `cp` para cada arquivo). Não junte `mb` e `cp` na mesma linha.
+**Two separate commands** (`mb` once; `cp` for each file). Don't combine `mb` and `cp` on the same line.
 
 ---
 
-## 3. EC2 — subir Ubuntu, nomear e entrar por SSH
+## 3. EC2 — bring up Ubuntu, name it, and log in via SSH
 
-Objetivo: ter uma máquina Linux acessível por SSH, como no vídeo **antes** do Airflow.
+Goal: have a Linux machine accessible via SSH, just like in the video **before** Airflow.
 
-O Floci não cria VM na Amazon: `run-instances` sobe um **container Docker**. `ami-ubuntu2204` = Ubuntu 22.04 do catálogo Floci. `t2.micro` é só metadado.
+Floci doesn't create a VM on Amazon: `run-instances` brings up a **Docker container**. `ami-ubuntu2204` = Ubuntu 22.04 from the Floci catalog. `t2.micro` is just metadata.
 
-### 3.1 Chave SSH (obrigatório)
+### 3.1 SSH key (required)
 
-`aws ec2 create-key-pair` no Floci gera chave **dummy** — **não serve** para SSH. Importe **sua** chave pública.
+`aws ec2 create-key-pair` on Floci generates a **dummy** key — it **doesn't work** for SSH. Import **your own** public key.
 
-Gerar par (se ainda não existir):
+Generate a key pair (if one doesn't already exist):
 
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N "" -C "floci-eddy"
 ls -l ~/.ssh/id_ed25519 ~/.ssh/id_ed25519.pub
 ```
 
-Importar no Floci (uma vez):
+Import it into Floci (one time):
 
 ```bash
 eval $(floci env)
@@ -192,19 +192,19 @@ aws ec2 import-key-pair \
   --public-key-material fileb://$HOME/.ssh/id_ed25519.pub
 ```
 
-Conferir:
+Check it:
 
 ```bash
 aws ec2 describe-key-pairs --output table
 ```
 
-Na UI: **Networking → Key Pairs → `floci-eddy`**.
+In the UI: **Networking → Key Pairs → `floci-eddy`**.
 
-### 3.2 Criar a instância com nome amigável
+### 3.2 Create the instance with a friendly name
 
-**Importante (AWS CLI v2 recente):** use `--count 1`, **não** `--min-count` / `--max-count` (erro: `Unknown options: --min-count, --max-count`).
+**Important (recent AWS CLI v2):** use `--count 1`, **not** `--min-count` / `--max-count` (error: `Unknown options: --min-count, --max-count`).
 
-O nome visível na UI é a tag **`Name`**, não um parâmetro `--name`:
+The name shown in the UI is the **`Name`** tag, not a `--name` parameter:
 
 ```bash
 eval $(floci env)
@@ -217,9 +217,9 @@ aws ec2 run-instances \
   --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=ec2-instance-eddy}]'
 ```
 
-A resposta JSON pode abrir no pager (`less`) — prompt `:` no fim. Pressione **`q`** para voltar ao terminal. A instância **já foi criada**.
+The JSON response may open in the pager (`less`) — a `:` prompt at the end. Press **`q`** to return to the terminal. The instance **has already been created**.
 
-Conferir estado:
+Check its state:
 
 ```bash
 aws ec2 describe-instances \
@@ -227,9 +227,9 @@ aws ec2 describe-instances \
   --output table
 ```
 
-Na UI: **Compute** → Name **`ec2-instance-eddy`**, State **`running`**.
+In the UI: **Compute** → Name **`ec2-instance-eddy`**, State **`running`**.
 
-Renomear instância já existente (alternativa):
+Rename an already existing instance (alternative):
 
 ```bash
 aws ec2 create-tags \
@@ -239,99 +239,99 @@ aws ec2 create-tags \
 
 ### 3.3 SSH
 
-| Item | Valor no Floci | No vídeo (AWS real) |
+| Item | Value on Floci | In the video (real AWS) |
 |---|---|---|
-| Usuário | **`root`** | `ubuntu` |
-| Host | **`127.0.0.1`** | IP público `ec2-….amazonaws.com` |
-| Porta | **`2200–2299`** no host | `22` |
-| Chave | `-i ~/.ssh/id_ed25519` (privada, **sem** `.pub`) | arquivo `.pem` |
+| User | **`root`** | `ubuntu` |
+| Host | **`127.0.0.1`** | public IP `ec2-….amazonaws.com` |
+| Port | **`2200–2299`** on host | `22` |
+| Key | `-i ~/.ssh/id_ed25519` (private, **without** `.pub`) | `.pem` file |
 
-Achar a porta (no **seu PC**, fora do SSH):
+Find the port (on **your PC**, outside SSH):
 
 ```bash
 docker ps --format "table {{.Names}}\t{{.Ports}}"
 ```
 
-Exemplo real deste projeto:
+Real example from this project:
 
 ```text
 floci-ec2-i-445fcef7e259b7f85   0.0.0.0:2200->22/tcp
 ```
 
-Entrar:
+Log in:
 
 ```bash
 ssh -i ~/.ssh/id_ed25519 -p 2200 root@127.0.0.1
 ```
 
-Se der erro de permissão na chave: `chmod 600 ~/.ssh/id_ed25519`.
+If you get a key permission error: `chmod 600 ~/.ssh/id_ed25519`.
 
-Dentro da instância (sanity check):
+Inside the instance (sanity check):
 
 ```bash
-hostname          # ex.: 2e8bfc63ff70 (ID do container)
+hostname          # e.g.: 2e8bfc63ff70 (container ID)
 uname -a
 cat /etc/os-release | head -3   # Ubuntu 22.04
-ls                              # home vazio é normal
-exit                            # volta ao seu PC
+ls                              # empty home is normal
+exit                            # back to your PC
 ```
 
-### 3.4 Religar a instância (depois de reiniciar o PC)
+### 3.4 Restarting the instance (after rebooting your PC)
 
-Use este fluxo **sempre** que ligar o computador de novo. **Não** rode `run-instances` outra vez — isso cria uma máquina **nova** e você perde o que estava dentro (Airflow, DAGs, `.venv`).
+Use this flow **every time** you turn the computer back on. **Do not** run `run-instances` again — that creates a **new** machine and you lose whatever was inside (Airflow, DAGs, `.venv`).
 
-| Situação | Comando |
+| Situation | Command |
 |----------|---------|
-| Instância **já existe** (ex.: `ec2-instance-eddy`) | **`start-instances`** |
-| Primeira vez / apagou com `terminate-instances` | **`run-instances`** (seção 3.2) |
+| Instance **already exists** (e.g. `ec2-instance-eddy`) | **`start-instances`** |
+| First time / deleted with `terminate-instances` | **`run-instances`** (section 3.2) |
 
-**Por que SSH falha após reboot?** A UI do Floci pode mostrar a instância **`running`**, mas o **container Docker** (`floci-ec2-i-…`) só volta quando você liga o Floci e manda **`start-instances`**. Às vezes o container sobe, mas o **SSH interno** ainda não — aí entra o passo 4 abaixo.
+**Why does SSH fail after a reboot?** The Floci UI may show the instance as **`running`**, but the **Docker container** (`floci-ec2-i-…`) only comes back once you start Floci and issue **`start-instances`**. Sometimes the container comes up, but **internal SSH** hasn't yet — that's where step 4 below comes in.
 
-Instância deste projeto (anote a sua):
+Instance for this project (note down your own):
 
 - **InstanceId:** `i-445fcef7e259b7f85`
 - **Name:** `ec2-instance-eddy`
-- **Porta SSH no host:** `2200` (confira com `docker ps`)
+- **SSH port on host:** `2200` (check with `docker ps`)
 
-**Checklist copiável** (no seu PC, na pasta do projeto):
+**Copyable checklist** (on your PC, in the project folder):
 
 ```bash
-# 0) Docker precisa estar rodando
+# 0) Docker needs to be running
 docker ps
 
-# 1) Floci (se parou ao desligar o PC)
+# 1) Floci (if it stopped when the PC was shut down)
 cd ~/1_GitHub/Data-Engineering_ETL_AWS-EC2_e_Airflow
 floci start --persist ./floci-data
 eval $(floci env)
 
-# 2) Religar a EC2 existente (NÃO é run-instances)
+# 2) Restart the existing EC2 instance (NOT run-instances)
 aws ec2 start-instances --instance-ids i-445fcef7e259b7f85
 
 sleep 5
 docker ps --format "table {{.Names}}\t{{.Ports}}"
 ```
 
-Esperado no `docker ps`:
+Expected in `docker ps`:
 
 ```text
 floci-ec2-i-445fcef7e259b7f85   0.0.0.0:2200->22/tcp
 ```
 
-**3) Entrar por SSH** (troque `2200` se o `docker ps` mostrar outra porta):
+**3) Log in via SSH** (change `2200` if `docker ps` shows a different port):
 
 ```bash
 ssh -i ~/.ssh/id_ed25519 -p 2200 root@127.0.0.1
 ```
 
-**4) Se der `Connection refused` ou `Connection reset`** — container up, SSH ainda não. No **seu PC** (fora do SSH):
+**4) If you get `Connection refused` or `Connection reset`** — container is up, SSH isn't yet. On **your PC** (outside SSH):
 
 ```bash
 docker exec floci-ec2-i-445fcef7e259b7f85 bash -c "mkdir -p /run/sshd && /usr/sbin/sshd"
 ```
 
-Tente o `ssh` de novo. O nome do container no Docker é **`floci-ec2-` + InstanceId** (ex.: `floci-ec2-i-445fcef7e259b7f85`).
+Try the `ssh` command again. The Docker container's name is **`floci-ec2-` + InstanceId** (e.g. `floci-ec2-i-445fcef7e259b7f85`).
 
-**5) Conferir que o Airflow ainda está instalado** (dentro do SSH):
+**5) Check that Airflow is still installed** (inside SSH):
 
 ```bash
 source /root/.venv/bin/activate
@@ -340,66 +340,66 @@ airflow version
 ls ~/airflow
 ```
 
-**6) Subir a UI de novo** (terminal dedicado, dentro do SSH):
+**6) Bring the UI back up** (dedicated terminal, inside SSH):
 
 ```bash
 airflow standalone
 ```
 
-**7) Navegador** — outro terminal no PC, túnel (deixe aberto).
+**7) Browser** — another terminal on your PC, tunnel (leave it open).
 
-Isto é para abrir o Airflow no browser, ou seja, conectar o container Airflow com o navegador.
+This is to open Airflow in the browser, i.e., connect the Airflow container to the browser.
 
 ```bash
 ssh -i ~/.ssh/id_ed25519 -p 2200 -L 8080:localhost:8080 root@127.0.0.1
 ```
 
-→ **http://localhost:8080** · usuário **`admin`** · senha em:
+→ **http://localhost:8080** · user **`admin`** · password in:
 
 `cat ~/airflow/simple_auth_manager_passwords.json.generated`
 
-**VS Code Remote SSH** (`floci-ec2-eddy` → `/root/airflow`) continua valendo após religar — só precisa que o passo 3 (SSH) funcione.
+**VS Code Remote SSH** (`floci-ec2-eddy` → `/root/airflow`) still works after restarting — it just needs step 3 (SSH) to work.
 
-### 3.5 Apagar instância
+### 3.5 Delete the instance
 
-Pela CLI (recomendado):
+Via CLI (recommended):
 
 ```bash
 eval $(floci env)
 aws ec2 terminate-instances --instance-ids i-COLE_O_ID
 ```
 
-**UI:** instâncias **`terminated`** podem continuar visíveis por ~1 hora (comportamento normal). A lixeira na UI **não** remove imediatamente como no console AWS — use `terminate-instances` se precisar garantir.
+**UI:** **`terminated`** instances may remain visible for ~1 hour (normal behavior). The trash icon in the UI does **not** remove it immediately like the AWS console does — use `terminate-instances` if you need to guarantee it.
 
-Instâncias **`terminated`** não aceitam SSH. Crie outra com `run-instances` (a chave `floci-eddy` permanece em Networking).
+**`terminated`** instances do not accept SSH. Create another one with `run-instances` (the `floci-eddy` key remains under Networking).
 
-Linhas com nome **`image`** na UI são entradas do **catálogo de AMIs**, não instâncias suas.
+Rows named **`image`** in the UI are entries from the **AMI catalog**, not your instances.
 
 ---
 
-## 4. Airflow 3.3.1 + DAG `weather_dag` (na EC2 Floci)
+## 4. Airflow 3.3.1 + `weather_dag` DAG (on Floci EC2)
 
-Reproduzimos o vídeo com stack atual: [Airflow 3.3.1](https://pypi.org/project/apache-airflow/) + [uv](https://docs.astral.sh/uv/) + Python **3.12** na EC2 (`/root/.venv`).
+We reproduce the video with a current stack: [Airflow 3.3.1](https://pypi.org/project/apache-airflow/) + [uv](https://docs.astral.sh/uv/) + Python **3.12** on EC2 (`/root/.venv`).
 
-Diferenças em relação ao vídeo (Airflow 2):
+Differences from the video (Airflow 2):
 
 - `schedule_interval=` → `schedule=`
 - `execution_date` → `logical_date`
-- Senha admin: `cat ~/airflow/simple_auth_manager_passwords.json.generated` (**ler** com `cat`, não executar o arquivo)
+- Admin password: `cat ~/airflow/simple_auth_manager_passwords.json.generated` (**read** it with `cat`, don't execute the file)
 
-### 4.0 Repo local vs EC2 (dois lugares)
+### 4.0 Local repo vs. EC2 (two places)
 
-| Artefato | Repo local (Git) | EC2 (onde roda) |
+| Artifact | Local repo (Git) | EC2 (where it runs) |
 |----------|------------------|-----------------|
 | DAG | [`airflow/dags/weather_dag.py`](airflow/dags/weather_dag.py) | `/root/airflow/dags/weather_dag.py` |
-| Segredos | [`.env.example`](.env.example) na raiz | `/root/airflow/.env` ([`airflow/.env.example`](airflow/.env.example)) |
+| Secrets | [`.env.example`](.env.example) at root | `/root/airflow/.env` ([`airflow/.env.example`](airflow/.env.example)) |
 | Airflow / venv | — | `/root/airflow`, `/root/.venv` |
 
-A pasta [`airflow/`](airflow/) no repo **espelha** a estrutura da EC2 (`dags/`). Depois de editar no Git, **copie** o `.py` para a instância (Remote SSH). **Nunca** commite `.env` com API key.
+The [`airflow/`](airflow/) folder in the repo **mirrors** the EC2 structure (`dags/`). After editing in Git, **copy** the `.py` file to the instance (Remote SSH). **Never** commit `.env` with the API key.
 
-Agente Cursor: skill [`.cursor/skills/floci-ec2-airflow/`](.cursor/skills/floci-ec2-airflow/SKILL.md) (checklist pós-reboot, paths, UI).
+Cursor agent: skill [`.cursor/skills/floci-ec2-airflow/`](.cursor/skills/floci-ec2-airflow/SKILL.md) (post-reboot checklist, paths, UI).
 
-### 4.1 Instalar Airflow (primeira vez, dentro do SSH)
+### 4.1 Install Airflow (first time, inside SSH)
 
 ```bash
 apt update && apt install -y curl ca-certificates
@@ -418,21 +418,21 @@ uv pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_U
 uv pip install requests python-dotenv boto3 pandas
 ```
 
-### 4.2 `.env` na EC2
+### 4.2 `.env` on the EC2 instance
 
-Crie `/root/airflow/.env` (template: [`airflow/.env.example`](airflow/.env.example)):
+Create `/root/airflow/.env` (template: [`airflow/.env.example`](airflow/.env.example)):
 
 ```env
-API_KEY_OPENWEATHER=sua_chave_aqui
+API_KEY_OPENWEATHER=your_key_here
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 AWS_DEFAULT_REGION=us-east-1
 AWS_ENDPOINT_URL=http://172.17.0.1:4566
 ```
 
-De **dentro** da EC2, `localhost:4566` aponta para o próprio container. Use **`172.17.0.1:4566`** (gateway Docker) para o S3 Floci no host.
+From **inside** the EC2 instance, `localhost:4566` points to the container itself. Use **`172.17.0.1:4566`** (Docker gateway) to reach the Floci S3 on the host.
 
-### 4.3 VS Code Remote SSH (como no vídeo)
+### 4.3 VS Code Remote SSH (as in the video)
 
 `~/.ssh/config`:
 
@@ -444,11 +444,11 @@ Host floci-ec2-eddy
     IdentityFile ~/.ssh/id_ed25519
 ```
 
-Conectar → abrir **`/root`** ou **`/root/airflow`**. Criar/editar `dags/weather_dag.py` ou copiar do repo.
+Connect → open **`/root`** or **`/root/airflow`**. Create/edit `dags/weather_dag.py` or copy it from the repo.
 
-### 4.4 Subir Airflow + UI no navegador
+### 4.4 Start Airflow + open the UI in the browser
 
-**Terminal 1** (SSH, deixa rodando):
+**Terminal 1** (SSH, leave it running):
 
 ```bash
 source /root/.venv/bin/activate
@@ -456,17 +456,17 @@ export AIRFLOW_HOME=~/airflow
 airflow standalone
 ```
 
-**Terminal 2** (no PC, túnel — deixa aberto):
+**Terminal 2** (on your PC, tunnel — leave it open):
 
 ```bash
 ssh -i ~/.ssh/id_ed25519 -p 2200 -L 8080:localhost:8080 root@127.0.0.1
 ```
 
-Browser: **http://localhost:8080** · login **`admin`** + senha do JSON (`cat`, seção 3.4).
+Browser: **http://localhost:8080** · login **`admin`** + password from the JSON file (`cat`, section 3.4).
 
-### 4.5 DAG `weather_dag` — deploy e execução
+### 4.5 `weather_dag` DAG — deploy and run
 
-Código: [`airflow/dags/weather_dag.py`](airflow/dags/weather_dag.py)
+Code: [`airflow/dags/weather_dag.py`](airflow/dags/weather_dag.py)
 
 Pipeline:
 
@@ -475,16 +475,16 @@ extract_weather  →  transform_to_csv  →  load_to_s3
    (OpenWeather)      (CSV string)      (s3://my-s3-for-cv/weather/)
 ```
 
-Na UI do Airflow:
+In the Airflow UI:
 
 1. **Dags** → **`weather_dag`**
-2. **Toggle ON** (despausar — senão não roda no schedule)
-3. **Acionar** (▶) — execução manual imediata
-4. Aba **Tarefas** / **Execuções** — três tasks verdes = sucesso
+2. **Toggle ON** (unpause — otherwise it won't run on schedule)
+3. **Trigger** (▶) — immediate manual run
+4. **Tasks** / **Runs** tab — three green tasks = success
 
-**Mapeado = false** na UI = tarefa normal (não é *dynamic task mapping*). **Operador `@task`** = TaskFlow API.
+**Mapped = false** in the UI = a normal task (not *dynamic task mapping*). **`@task` operator** = TaskFlow API.
 
-Conferir CSV no S3 (terminal **local**):
+Check the CSV in S3 (**local** terminal):
 
 ```bash
 eval $(floci env)
@@ -492,28 +492,28 @@ aws s3 ls s3://my-s3-for-cv/weather/ --recursive
 aws s3 cp s3://my-s3-for-cv/weather/vitoria_YYYYMMDD.csv /tmp/clima.csv
 ```
 
-Exemplo já gerado: `s3://my-s3-for-cv/weather/vitoria_20260916.csv`.
+Example already generated: `s3://my-s3-for-cv/weather/vitoria_20260916.csv`.
 
 ---
 
-## Erros que já encontramos (referência rápida)
+## Errors we've encountered (quick reference)
 
-| Sintoma | Causa | Solução |
+| Symptom | Cause | Solution |
 |---|---|---|
-| `Unknown options: --min-count, --max-count` | AWS CLI v2.36+ | Usar `--count 1` |
-| Terminal parado com `:` após JSON | Pager `less` | Tecla `q`; ou `export AWS_PAGER=""` |
-| `import-key-pair` file not found | Par SSH não existia em `~/.ssh/` | `ssh-keygen` e repetir import |
-| UI não apaga instância terminated | Tombstone ~1h no Floci | `aws ec2 terminate-instances` |
-| Só aparece `i-…` na UI | Sem tag Name | `--tag-specifications` ou `create-tags` |
-| SSH `Connection refused` após reboot | Container EC2 parado | `floci start` + `aws ec2 start-instances` |
-| SSH `Connection reset` com container up | `sshd` não iniciou no container | `docker exec … /usr/sbin/sshd` (seção 3.4) |
-| UI Floci diz `running`, SSH não vai | Metadado ≠ container Docker | `docker ps` deve listar `floci-ec2-i-…` |
+| `Unknown options: --min-count, --max-count` | AWS CLI v2.36+ | Use `--count 1` |
+| Terminal stuck on `:` after JSON | `less` pager | Press `q`; or `export AWS_PAGER=""` |
+| `import-key-pair` file not found | SSH key pair didn't exist in `~/.ssh/` | `ssh-keygen` and repeat the import |
+| UI doesn't remove terminated instance | ~1h tombstone in Floci | `aws ec2 terminate-instances` |
+| Only `i-…` shows up in the UI | No Name tag | `--tag-specifications` or `create-tags` |
+| SSH `Connection refused` after reboot | EC2 container stopped | `floci start` + `aws ec2 start-instances` |
+| SSH `Connection reset` with container up | `sshd` didn't start in the container | `docker exec … /usr/sbin/sshd` (section 3.4) |
+| Floci UI says `running`, SSH won't connect | Metadata ≠ Docker container | `docker ps` should list `floci-ec2-i-…` |
 
 ---
 
-## Referências
+## References
 
-- Vídeo: <https://www.youtube.com/watch?v=uhQ54Dgp6To>
+- Video: <https://www.youtube.com/watch?v=uhQ54Dgp6To>
 - Floci: <https://floci.io> · EC2: <https://floci.io/floci/services/ec2/>
 - Airflow 3.3.1: <https://airflow.apache.org/docs/apache-airflow/stable/start.html>
 - OpenWeather Current Weather: <https://openweathermap.org/api/current.md>
