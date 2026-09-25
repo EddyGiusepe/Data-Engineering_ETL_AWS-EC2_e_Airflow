@@ -519,4 +519,6 @@ Example already generated: `s3://my-s3-for-cv/weather/vitoria_20260916.csv`.
 - OpenWeather Current Weather: <https://openweathermap.org/api/current.md>
 - AWS CLI v2: <https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html>
 
+
+
 Thank God!
